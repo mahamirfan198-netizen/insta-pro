@@ -16,7 +16,7 @@ export default function ImageUpload({
   const [uploading, setUploading] = useState(false);
   const [preview, setPreview] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const inputRef = useRef<HTMLElement>(null);
+  const inputRef = useRef<HTMLInputElement | null>(null);
 
   async function handleFile(file: File) {
     setError(null);
@@ -88,7 +88,7 @@ export default function ImageUpload({
           disabled={uploading}
           className="w-full py-12 rounded-2xl border-2 border-dashed border-purple-300 text-purple-600 hover:bg-purple-50 transition"
         >
-          {uploading ? "Uploading..." : "🷰 " + label}
+          {uploading ? "Uploading..." : "📷 " + label}
         </button>
       )}
 
