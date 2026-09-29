@@ -1,0 +1,145 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  username     String   @unique @db.VarChar(30)
+  email        String   @unique
+  passwordHash String
+  displayName  String   @db.VarChar(60)
+  bio          String?  @db.VarChar(200)
+  avatarUrl    String?
+  coverUrl     String?
+  website      String?  @db.VarChar(100)
+  gender       String?  @db.VarChar(30)
+  pronouns     String?  @db.VarChar(30)
+  musicUrl     String?
+  notes        String?  @db.VarChar(60)
+  sleepMode    Boolean  @default(false)
+  isVerified   Boolean  @default(false)
+  isPrivate    Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  posts         Post[]
+  comments      Comment[]
+  likes         Like[]
+  stories       Story[]
+  followers     Follow[]       @relation("following")
+  following     Follow[]       @relation("follower")
+  notifications Notification[] @relation("recipient")
+  actorNotifs   Notification[] @relation("actor")
+  sentMessages     Message[]   @relation("sender")
+  receivedMessages Message[]   @relation("receiver")
+
+  @@index([username])
+  @@index([email])
+}
+
+model Post {
+  id           String   @id @default(cuid())
+  authorId     String
+  caption      String?  @db.VarChar(2200)
+  location     String?
+  imageUrl     String
+  likeCount    Int      @default(0)
+  commentCount Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  author   User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  comments Comment[]
+  likes    Like[]
+
+  @@index([authorId, createdAt])
+  @@index([createdAt])
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  postId    String
+  authorId  String
+  body      String   @db.VarChar(1000)
+  createdAt DateTime @default(now())
+
+  post   Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  author User @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([postId, createdAt])
+}
+
+model Like {
+  id        String   @id @default(cuid())
+  postId    String
+  userId    String
+  createdAt DateTime @default(now())
+
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, userId])
+}
+
+model Follow {
+  id          String   @id @default(cuid())
+  followerId  String
+  followingId String
+  status      String   @default("ACCEPTED")
+  createdAt   DateTime @default(now())
+
+  follower  User @relation("follower", fields: [followerId], references: [id], onDelete: Cascade)
+  following User @relation("following", fields: [followingId], references: [id], onDelete: Cascade)
+
+  @@unique([followerId, followingId])
+  @@index([followingId])
+  @@index([followingId, status])
+}
+
+model Story {
+  id        String   @id @default(cuid())
+  authorId  String
+  imageUrl  String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  author User @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([authorId, expiresAt])
+  @@index([expiresAt])
+}
+
+model Notification {
+  id          String   @id @default(cuid())
+  recipientId String
+  actorId     String
+  type        String
+  postId      String?
+  read        Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  recipient User @relation("recipient", fields: [recipientId], references: [id], onDelete: Cascade)
+  actor     User @relation("actor", fields: [actorId], references: [id], onDelete: Cascade)
+
+  @@index([recipientId, read, createdAt])
+}
+
+model Message {
+  id         String   @id @default(cuid())
+  senderId   String
+  receiverId String
+  body       String   @db.VarChar(2000)
+  read       Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  sender   User @relation("sender", fields: [senderId], references: [id], onDelete: Cascade)
+  receiver User @relation("receiver", fields: [receiverId], references: [id], onDelete: Cascade)
+
+  @@index([senderId, receiverId, createdAt])
+  @@index([receiverId, read])
+}
